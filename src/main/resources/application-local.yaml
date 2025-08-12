@@ -1,0 +1,75 @@
+server:
+  port: 0
+
+document:
+  expiration-hours: 72
+  max-file-size-mb: 1
+
+spring:
+  jpa:
+    properties:
+      hibernate:
+        default_schema: public
+    show-sql: ${SHOW_SQL:true}
+    open-in-view: false
+  datasource:
+    driver-class-name: org.postgresql.Driver
+    url: jdbc:postgresql://localhost:5432/mis_file_api_service?currentSchema=public
+    username: postgres
+    password: 123
+  liquibase:
+    default-schema: public
+
+  application:
+    name: file-api-service
+
+  kafka:
+    template:
+      default-topic: file-api.save-document
+    listener:
+      default-error-handler:
+        enable-dlt: true
+        dlt:
+          suffix: .dlt
+    consumer:
+      bootstrap-servers: 127.0.0.1:9092
+      group-id: file-api-group
+      auto-offset-reset: earliest
+      key-deserializer: org.apache.kafka.common.serialization.StringDeserializer
+      value-deserializer: org.springframework.kafka.support.serializer.JsonDeserializer
+      properties:
+        spring.json.trusted.packages: "academy.kata.mis.fileapiservice.kafka.dto"
+        spring.json.value.default.type: "academy.kata.mis.fileapiservice.kafka.dto.SaveDocument"
+    producer:
+      bootstrap-servers: 127.0.0.1:9092
+      key-serializer: org.apache.kafka.common.serialization.StringSerializer
+      value-serializer: org.springframework.kafka.support.serializer.JsonSerializer
+      properties:
+        spring.json.add.type.headers: false
+
+minio:
+  endpoint: http://localhost:9000
+  access-key: masoud  # логин
+  secret-key: Strong#Pass#2022  # пароль
+  bucket: documents
+
+logging:
+  level:
+    org.springframework.boot.context.properties: DEBUG
+    academy.kata.mis.fileapiservice.config: DEBUG
+    org.springframework.cloud.openfeign: DEBUG
+    academy.kata.mis.fileapiservice: DEBUG
+feign:
+  client:
+    config:
+      default:
+        connectTimeout: 5000
+        readTimeout: 5000
+        loggerLevel: basic
+
+eureka:
+  instance:
+    instance-id: ${spring.application.name}:${random.value}
+  client:
+    service-url:
+      defaultZone: http://localhost:8762/eureka
